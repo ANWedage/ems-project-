@@ -1,6 +1,6 @@
 // Change this to your deployed backend URL when you ship the app.
 // During local development the Node backend runs on this address.
-const API_BASE_URL = 'https://ems-project-p5x9.onrender.com';
+const API_BASE_URL = 'https://ems-project-p5x9.onrender.com/api';
 
 let authToken = null;
 
