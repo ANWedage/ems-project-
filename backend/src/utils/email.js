@@ -1,30 +1,28 @@
-const sgMail = require('@sendgrid/mail');
+const { Resend } = require('resend');
 
-let initialized = false;
+let resendClient = null;
 
-function ensureInitialized() {
-  if (initialized) return true;
+function getClient() {
+  if (resendClient) return resendClient;
 
-  const apiKey = process.env.SENDGRID_API_KEY;
+  const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
-    console.warn('[email] SENDGRID_API_KEY not set - emails will be skipped.');
-    return false;
+    console.warn('[email] RESEND_API_KEY not set - emails will be skipped.');
+    return null;
   }
 
-  sgMail.setApiKey(apiKey);
-  initialized = true;
-  return true;
+  resendClient = new Resend(apiKey);
+  return resendClient;
 }
 
 /**
  * Sends an email for a critical action (task assigned, leave approved, etc)
- * using SendGrid's HTTPS API instead of raw SMTP.
+ * using Resend's HTTPS API.
  *
- * Why SendGrid instead of SMTP: many hosting providers (including Render)
- * block outbound SMTP ports (25/465/587) on free/standard tiers as an
- * anti-spam measure, which causes "Connection timeout" errors no matter how
- * correctly SMTP is configured. SendGrid's API runs over HTTPS (port 443),
- * which is never blocked, so this avoids that entire class of problem.
+ * Why Resend: it sends over HTTPS (port 443, never blocked by hosts like
+ * Render), has a genuinely free tier (100/day, 3000/month, no card), and
+ * new accounts aren't subjected to the kind of "0 credits, under review"
+ * wall that SendGrid can apply to brand-new signups.
  *
  * Never throws - email failures should never break the actual business
  * operation (e.g. a task should still get created even if the email
@@ -32,7 +30,9 @@ function ensureInitialized() {
  */
 async function sendEmail({ to, subject, text, html }) {
   if (!to) return;
-  if (!ensureInitialized()) return;
+
+  const client = getClient();
+  if (!client) return;
 
   const fromAddress = process.env.EMAIL_FROM;
   if (!fromAddress) {
@@ -41,17 +41,22 @@ async function sendEmail({ to, subject, text, html }) {
   }
 
   try {
-    await sgMail.send({
+    const { data, error } = await client.emails.send({
+      from: fromAddress,
       to,
-      from: fromAddress, // must match a verified Sender Identity in SendGrid
       subject,
       text,
       html: html || `<p>${text}</p>`,
     });
-    console.log(`[email] sent "${subject}" to ${to}`);
+
+    if (error) {
+      console.error(`[email] failed to send "${subject}" to ${to}:`, error.message || error);
+      return;
+    }
+
+    console.log(`[email] sent "${subject}" to ${to} (id: ${data?.id})`);
   } catch (err) {
-    const detail = err.response?.body?.errors?.map((e) => e.message).join('; ') || err.message;
-    console.error(`[email] failed to send "${subject}" to ${to}: ${detail}`);
+    console.error(`[email] failed to send "${subject}" to ${to}:`, err.message);
   }
 }
 
