@@ -1,50 +1,57 @@
-const nodemailer = require('nodemailer');
+const sgMail = require('@sendgrid/mail');
 
-let transporter = null;
+let initialized = false;
 
-function getTransporter() {
-  if (transporter) return transporter;
+function ensureInitialized() {
+  if (initialized) return true;
 
-  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS } = process.env;
-
-  if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) {
-    console.warn('[email] SMTP not configured - emails will be skipped. Set SMTP_HOST/SMTP_USER/SMTP_PASS in .env to enable.');
-    return null;
+  const apiKey = process.env.SENDGRID_API_KEY;
+  if (!apiKey) {
+    console.warn('[email] SENDGRID_API_KEY not set - emails will be skipped.');
+    return false;
   }
 
-  transporter = nodemailer.createTransport({
-    host: SMTP_HOST,
-    port: Number(SMTP_PORT) || 587,
-    secure: Number(SMTP_PORT) === 465, // true for port 465, false for 587/others
-    auth: { user: SMTP_USER, pass: SMTP_PASS },
-  });
-
-  return transporter;
+  sgMail.setApiKey(apiKey);
+  initialized = true;
+  return true;
 }
 
 /**
- * Sends an email for a critical action (task assigned, leave approved, etc).
+ * Sends an email for a critical action (task assigned, leave approved, etc)
+ * using SendGrid's HTTPS API instead of raw SMTP.
+ *
+ * Why SendGrid instead of SMTP: many hosting providers (including Render)
+ * block outbound SMTP ports (25/465/587) on free/standard tiers as an
+ * anti-spam measure, which causes "Connection timeout" errors no matter how
+ * correctly SMTP is configured. SendGrid's API runs over HTTPS (port 443),
+ * which is never blocked, so this avoids that entire class of problem.
+ *
  * Never throws - email failures should never break the actual business
- * operation (e.g. a task should still get created even if the email fails
- * to send because of a bad SMTP password or network blip).
+ * operation (e.g. a task should still get created even if the email
+ * provider has an outage or the API key is misconfigured).
  */
 async function sendEmail({ to, subject, text, html }) {
   if (!to) return;
+  if (!ensureInitialized()) return;
 
-  const t = getTransporter();
-  if (!t) return; // SMTP not configured, silently skip
+  const fromAddress = process.env.EMAIL_FROM;
+  if (!fromAddress) {
+    console.warn('[email] EMAIL_FROM not set - skipping email send.');
+    return;
+  }
 
   try {
-    await t.sendMail({
-      from: process.env.EMAIL_FROM || process.env.SMTP_USER,
+    await sgMail.send({
       to,
+      from: fromAddress, // must match a verified Sender Identity in SendGrid
       subject,
       text,
       html: html || `<p>${text}</p>`,
     });
     console.log(`[email] sent "${subject}" to ${to}`);
   } catch (err) {
-    console.error(`[email] failed to send "${subject}" to ${to}:`, err.message);
+    const detail = err.response?.body?.errors?.map((e) => e.message).join('; ') || err.message;
+    console.error(`[email] failed to send "${subject}" to ${to}: ${detail}`);
   }
 }
 
