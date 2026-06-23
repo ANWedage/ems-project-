@@ -1,6 +1,6 @@
 {
   "name": "ems-desktop",
-  "version": "3.0.1",
+  "version": "1.0.0",
   "description": "EMS Desktop Application (Electron client)",
   "author": "ANWedage",
   "main": "main.js",
