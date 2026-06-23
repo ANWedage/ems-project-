@@ -589,6 +589,11 @@ async function showUpdateModal() {
           <span class="upd-badge-new">New version available</span><br>
           <strong>v${data.version}</strong> is ready to download.
           ${data.releaseDate ? `<br><small style="color:var(--muted);">Released ${new Date(data.releaseDate).toLocaleDateString()}</small>` : ''}
+          ${data.releaseNotes ? `
+            <div style="margin-top:12px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;line-height:1.6;color:var(--text);max-height:120px;overflow-y:auto;">
+              <strong style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);">What's new</strong><br>
+              ${data.releaseNotes}
+            </div>` : ''}
         `;
         rebuildButtons(`<button class="btn secondary" id="_upd_close">Later</button><button class="btn" id="_upd_dl">⬇️ Download</button>`);
         break;

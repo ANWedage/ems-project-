@@ -1,6 +1,6 @@
 {
   "name": "ems-desktop",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "EMS Desktop Application (Electron client)",
   "author": "ANWedage",
   "main": "main.js",
@@ -45,6 +45,9 @@
       "owner": "ANWedage",
       "repo": "ems-project-",
       "releaseType": "release"
+    },
+    "releaseInfo": {
+      "releaseNotes": "- Bug fixes and performance improvements"
     }
   }
 }
