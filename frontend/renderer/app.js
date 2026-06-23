@@ -56,7 +56,8 @@ function screenAgreement() {
           Each company that registers receives its own isolated, private database; Anthropic-free
           and unaffiliated third parties cannot access another company's data. You are responsible
           for safeguarding the login credentials you create. Continued use of this application
-          constitutes acceptance of these terms.
+          constitutes acceptance of these terms.<br><br>
+          <b>Developed by : Adeepa Neth Wedage</b>
         </div>
         <label style="display:flex;align-items:center;gap:8px;margin-top:16px;font-weight:400;">
           <input type="checkbox" id="agree-checkbox" style="width:auto;" />
