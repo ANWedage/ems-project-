@@ -43,7 +43,6 @@ function buildMenu() {
 
   const template = [
     ...(isMac ? [{ role: 'appMenu' }] : []),
-    { role: 'fileMenu' },
     { role: 'windowMenu' },
     {
       label: 'Help',
