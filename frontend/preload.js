@@ -23,6 +23,5 @@ contextBridge.exposeInMainWorld('updater', {
   // Call this when closing the modal to avoid listener leaks
   removeListeners: () => {
     ipcRenderer.removeAllListeners('updater:status');
-    ipcRenderer.removeAllListeners('updater:open-modal');
   },
 });

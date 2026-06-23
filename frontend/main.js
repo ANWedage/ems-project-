@@ -58,12 +58,8 @@ function buildMenu() {
               message: 'EMS Desktop',
               detail: [
                 `Version:   ${app.getVersion()}`,
-                `Electron:  ${process.versions.electron}`,
-                `Node.js:   ${process.versions.node}`,
-                `Platform:  ${process.platform} ${process.arch}`,
                 '',
                 'Employee Management System',
-                'Built with Electron.',
               ].join('\n'),
               buttons: ['OK'],
             });
@@ -88,6 +84,11 @@ function buildMenu() {
 app.whenReady().then(() => {
   buildMenu();
   createWindow();
+
+  // Auto-check for updates 5 seconds after launch (delay lets the window fully load first)
+  if (app.isPackaged) {
+    setTimeout(() => autoUpdater.checkForUpdates(), 5000);
+  }
 });
 
 app.on('window-all-closed', () => {

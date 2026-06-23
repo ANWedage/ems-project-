@@ -532,7 +532,7 @@ async function showUpdateModal() {
   const progLbl  = document.getElementById('_upd_prog_lbl');
 
   function close() {
-    window.updater.removeListeners();
+    window.updater.removeListeners(); // clears updater:status only
     overlay.remove();
   }
 
@@ -574,6 +574,7 @@ async function showUpdateModal() {
     window.updater.install();
   }
 
+  window.updater.removeListeners(); // clear any stale status listeners before re-registering
   window.updater.onStatus((data) => {
     switch (data.event) {
       case 'checking':
@@ -2169,4 +2170,52 @@ init();
 // Wire the OS menu-bar "Help → Check for Updates" click to the in-app modal
 if (window.updater && window.updater.onOpenModal) {
   window.updater.onOpenModal(() => showUpdateModal());
+}
+
+// Listen for background startup update check — show a toast if new version found
+if (window.updater) {
+  window.updater.onStatus((data) => {
+    if (data.event === 'available') {
+      showUpdateToast(data.version);
+    } else if (data.event === 'downloaded') {
+      showUpdateToast(data.version, true);
+    }
+  });
+}
+
+function showUpdateToast(version, readyToInstall = false) {
+  const existing = document.getElementById('_update_toast');
+  if (existing) existing.remove();
+
+  const toast = document.createElement('div');
+  toast.id = '_update_toast';
+  toast.style.cssText = `
+    position:fixed; bottom:24px; right:24px; z-index:9999;
+    background:#1e293b; color:#f1f5f9; border-radius:12px;
+    padding:12px 16px; display:flex; align-items:center; gap:12px;
+    font-size:13px; box-shadow:0 8px 30px rgba(0,0,0,0.35);
+    animation:_toast-in 0.25s ease;
+  `;
+  toast.innerHTML = readyToInstall
+    ? `<span>⚡ v${version} ready — <button id="_toast_action" style="background:none;border:none;color:#93c5fd;cursor:pointer;text-decoration:underline;font-size:13px;padding:0;">Restart &amp; Install</button></span>
+       <button id="_toast_dismiss" style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:16px;padding:0;margin-left:4px;">✕</button>`
+    : `<span>🆕 v${version} available — <button id="_toast_action" style="background:none;border:none;color:#93c5fd;cursor:pointer;text-decoration:underline;font-size:13px;padding:0;">View update</button></span>
+       <button id="_toast_dismiss" style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:16px;padding:0;margin-left:4px;">✕</button>`;
+
+  // Add keyframe once
+  if (!document.getElementById('_toast_style')) {
+    const s = document.createElement('style');
+    s.id = '_toast_style';
+    s.textContent = `@keyframes _toast-in { from{transform:translateY(16px);opacity:0} to{transform:translateY(0);opacity:1} }`;
+    document.head.appendChild(s);
+  }
+
+  document.body.appendChild(toast);
+
+  document.getElementById('_toast_dismiss').onclick = () => toast.remove();
+  document.getElementById('_toast_action').onclick = () => {
+    toast.remove();
+    if (readyToInstall) window.updater.install();
+    else showUpdateModal();
+  };
 }
