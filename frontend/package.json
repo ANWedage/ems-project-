@@ -43,7 +43,8 @@
     "publish": {
       "provider": "github",
       "owner": "ANWedage",
-      "repo": "ems-project-"
+      "repo": "ems-project-",
+      "releaseType": "release"
     }
   }
 }
