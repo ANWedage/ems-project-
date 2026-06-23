@@ -1,7 +1,7 @@
 ﻿// IMPORTANT: replace this with your live Render backend URL before building
 // the installer, e.g. 'https://ems-project-xxxx.onrender.com/api'
 // Use 'http://localhost:5000/api' only while testing locally.
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = 'https://ems-project-p5x9.onrender.com/api';
 
 let authToken = null;
 
