@@ -333,3 +333,43 @@ th { color: var(--muted); font-weight: 600; }
 }
 .search-result-item:last-child { border-bottom: none; }
 .search-result-item:hover { background: #f0f4ff; }
+
+/* ─── Update modal ──────────────────────────────────────────────────────────── */
+.upd-spinner {
+  display: inline-block;
+  width: 13px; height: 13px;
+  border: 2px solid #c7d2fe;
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: upd-spin 0.7s linear infinite;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+@keyframes upd-spin { to { transform: rotate(360deg); } }
+
+.upd-track {
+  background: #e5e7eb;
+  border-radius: 99px;
+  height: 8px;
+  overflow: hidden;
+}
+.upd-fill {
+  height: 100%;
+  background: var(--primary);
+  border-radius: 99px;
+  transition: width 0.25s ease;
+}
+.upd-badge-new {
+  display: inline-block;
+  background: #dbeafe; color: #1d4ed8;
+  font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .05em;
+  padding: 2px 8px; border-radius: 20px; margin-bottom: 6px;
+}
+.upd-badge-ready {
+  display: inline-block;
+  background: #dcfce7; color: #15803d;
+  font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .05em;
+  padding: 2px 8px; border-radius: 20px; margin-bottom: 6px;
+}

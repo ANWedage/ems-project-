@@ -1,18 +1,22 @@
-﻿const { app, BrowserWindow, ipcMain } = require('electron');
+﻿const { app, BrowserWindow, ipcMain, Menu, shell, dialog } = require('electron');
 const path = require('path');
 const Store = require('electron-store');
+const { autoUpdater } = require('electron-updater');
 
-// Persistent local storage on the user's machine - this is how the app
-// remembers "you already finished setup, go straight to login" or
-// "you're already logged in" between app launches.
+// ─── Auto-updater setup ───────────────────────────────────────────────────────
+autoUpdater.autoDownload = false;        // user must confirm download
+autoUpdater.autoInstallOnAppQuit = true; // install on next quit if downloaded
+
+// Suppress errors in dev (no built package = no update feed)
+if (!app.isPackaged) {
+  autoUpdater.updateConfigPath = null;
+}
+
+// Persistent local storage on the user's machine
 const store = new Store();
 
 let mainWindow;
 
-// Window/taskbar icon. .ico on Windows, .icns on macOS, .png on Linux all work
-// with BrowserWindow's `icon` option, but a high-res PNG is the safest single
-// choice for the in-app window icon (the installer/build icon is set separately
-// in package.json's "build" config for each platform's packaged app icon).
 const appIcon = path.join(__dirname, 'build', 'icons', 'icon.png');
 
 function createWindow() {
@@ -32,7 +36,59 @@ function createWindow() {
   mainWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'));
 }
 
-app.whenReady().then(createWindow);
+// ─── Application Menu ─────────────────────────────────────────────────────────
+// Only File, Window, and Help — no Edit or View menus.
+function buildMenu() {
+  const isMac = process.platform === 'darwin';
+
+  const template = [
+    ...(isMac ? [{ role: 'appMenu' }] : []),
+    { role: 'fileMenu' },
+    { role: 'windowMenu' },
+    {
+      label: 'Help',
+      submenu: [
+        {
+          label: 'About EMS Desktop',
+          click: () => {
+            dialog.showMessageBox(mainWindow, {
+              type: 'info',
+              title: 'About EMS Desktop',
+              icon: appIcon,
+              message: 'EMS Desktop',
+              detail: [
+                `Version:   ${app.getVersion()}`,
+                `Electron:  ${process.versions.electron}`,
+                `Node.js:   ${process.versions.node}`,
+                `Platform:  ${process.platform} ${process.arch}`,
+                '',
+                'Employee Management System',
+                'Built with Electron.',
+              ].join('\n'),
+              buttons: ['OK'],
+            });
+          },
+        },
+        { type: 'separator' },
+        {
+          label: 'Check for Updates…',
+          click: () => {
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.webContents.send('updater:open-modal');
+            }
+          },
+        },
+      ],
+    },
+  ];
+
+  Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+}
+
+app.whenReady().then(() => {
+  buildMenu();
+  createWindow();
+});
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
@@ -42,7 +98,47 @@ app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) createWindow();
 });
 
-// --- IPC bridge for persistent local app state ---
+// ─── IPC: local app state ─────────────────────────────────────────────────────
 ipcMain.handle('store:get', (event, key) => store.get(key));
 ipcMain.handle('store:set', (event, key, value) => store.set(key, value));
 ipcMain.handle('store:delete', (event, key) => store.delete(key));
+ipcMain.handle('app:version', () => app.getVersion());
+
+// ─── IPC: auto-updater ────────────────────────────────────────────────────────
+function pushToRenderer(event, data = {}) {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('updater:status', { event, ...data });
+  }
+}
+
+autoUpdater.on('checking-for-update',   ()     => pushToRenderer('checking'));
+autoUpdater.on('update-not-available',  (info) => pushToRenderer('not-available', { version: info.version }));
+autoUpdater.on('update-available',      (info) => pushToRenderer('available', {
+  version:      info.version,
+  releaseNotes: info.releaseNotes || '',
+  releaseDate:  info.releaseDate  || '',
+}));
+autoUpdater.on('download-progress', (p) => pushToRenderer('progress', {
+  percent:        Math.round(p.percent),
+  transferred:    p.transferred,
+  total:          p.total,
+  bytesPerSecond: p.bytesPerSecond,
+}));
+autoUpdater.on('update-downloaded', (info) => pushToRenderer('downloaded', {
+  version:      info.version,
+  releaseNotes: info.releaseNotes || '',
+}));
+autoUpdater.on('error', (err) => pushToRenderer('error', { message: err.message }));
+
+ipcMain.handle('updater:check', async () => {
+  if (!app.isPackaged) return { devMode: true };
+  try { await autoUpdater.checkForUpdates(); return { ok: true }; }
+  catch (err) { return { error: err.message }; }
+});
+
+ipcMain.handle('updater:download', () => {
+  try { autoUpdater.downloadUpdate(); return { ok: true }; }
+  catch (err) { return { error: err.message }; }
+});
+
+ipcMain.handle('updater:install', () => autoUpdater.quitAndInstall(false, true));

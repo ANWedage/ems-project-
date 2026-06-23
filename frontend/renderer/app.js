@@ -499,6 +499,123 @@ async function renderNotificationsTab(refreshFn) {
 // ---------- CEO Dashboard ----------
 let ceoActiveTab = 'manage-employees';
 
+// ─── Update modal ─────────────────────────────────────────────────────────────
+async function showUpdateModal() {
+  const old = document.getElementById('_update_overlay');
+  if (old) old.remove();
+
+  const version = window.appMeta ? await window.appMeta.version() : '—';
+
+  const overlay = document.createElement('div');
+  overlay.id = '_update_overlay';
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="card" style="max-width:460px;width:100%;">
+      <h1 style="margin:0 0 4px;">Check for Updates</h1>
+      <p class="subtitle" style="margin:0 0 20px;">Current version: <strong>v${version}</strong></p>
+      <div id="_upd_msg">Click <strong>Check Now</strong> to look for a newer version.</div>
+      <div id="_upd_progress" style="display:none;margin-top:12px;">
+        <div class="upd-track"><div class="upd-fill" id="_upd_fill" style="width:0%"></div></div>
+        <p id="_upd_prog_lbl" style="font-size:12px;color:var(--muted);margin:4px 0 0;"></p>
+      </div>
+      <div class="btn-row" style="margin-top:24px;" id="_upd_btns">
+        <button class="btn secondary" id="_upd_close">Close</button>
+        <button class="btn" id="_upd_check">Check Now</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  const msgEl    = () => document.getElementById('_upd_msg');
+  const progWrap = document.getElementById('_upd_progress');
+  const fill     = document.getElementById('_upd_fill');
+  const progLbl  = document.getElementById('_upd_prog_lbl');
+
+  function close() {
+    window.updater.removeListeners();
+    overlay.remove();
+  }
+
+  function rebuildButtons(html) {
+    document.getElementById('_upd_btns').innerHTML = html;
+    const c = document.getElementById('_upd_close');   if (c) c.onclick = close;
+    const k = document.getElementById('_upd_check');   if (k) k.onclick = doCheck;
+    const d = document.getElementById('_upd_dl');      if (d) d.onclick = doDownload;
+    const i = document.getElementById('_upd_install'); if (i) i.onclick = doInstall;
+  }
+
+  function doCheck() {
+    msgEl().innerHTML = '<span class="upd-spinner"></span> Checking for updates…';
+    progWrap.style.display = 'none';
+    rebuildButtons(`<button class="btn secondary" id="_upd_close">Close</button>`);
+    window.updater.check().then(r => {
+      if (r && r.devMode) {
+        msgEl().textContent = '⚠️ Update checks only work in the packaged/installed app.';
+        rebuildButtons(`<button class="btn secondary" id="_upd_close">Close</button>`);
+      }
+      if (r && r.error) {
+        msgEl().textContent = `❌ Error: ${r.error}`;
+        rebuildButtons(`<button class="btn secondary" id="_upd_close">Close</button><button class="btn" id="_upd_check">Retry</button>`);
+      }
+    });
+  }
+
+  function doDownload() {
+    msgEl().textContent = 'Downloading update…';
+    progWrap.style.display = 'block';
+    fill.style.width = '0%';
+    rebuildButtons(`<button class="btn secondary" id="_upd_close">Close</button>`);
+    window.updater.download();
+  }
+
+  function doInstall() {
+    msgEl().textContent = 'Restarting to install update…';
+    rebuildButtons('');
+    window.updater.install();
+  }
+
+  window.updater.onStatus((data) => {
+    switch (data.event) {
+      case 'checking':
+        msgEl().innerHTML = '<span class="upd-spinner"></span> Checking for updates…';
+        break;
+      case 'not-available':
+        msgEl().innerHTML = `✅ You’re up to date &mdash; <strong>v${data.version}</strong> is the latest.`;
+        rebuildButtons(`<button class="btn secondary" id="_upd_close">Close</button>`);
+        break;
+      case 'available':
+        msgEl().innerHTML = `
+          <span class="upd-badge-new">New version available</span><br>
+          <strong>v${data.version}</strong> is ready to download.
+          ${data.releaseDate ? `<br><small style="color:var(--muted);">Released ${new Date(data.releaseDate).toLocaleDateString()}</small>` : ''}
+        `;
+        rebuildButtons(`<button class="btn secondary" id="_upd_close">Later</button><button class="btn" id="_upd_dl">⬇️ Download</button>`);
+        break;
+      case 'progress':
+        progWrap.style.display = 'block';
+        fill.style.width = `${data.percent}%`;
+        progLbl.textContent = `${data.percent}%  —  ${(data.transferred/1048576).toFixed(1)} / ${(data.total/1048576).toFixed(1)} MB`;
+        break;
+      case 'downloaded':
+        progWrap.style.display = 'none';
+        msgEl().innerHTML = `
+          <span class="upd-badge-ready">Ready to install</span><br>
+          <strong>v${data.version}</strong> downloaded. The app will restart to apply the update.
+        `;
+        rebuildButtons(`<button class="btn secondary" id="_upd_close">Later</button><button class="btn" id="_upd_install">⚡ Restart &amp; Install</button>`);
+        break;
+      case 'error':
+        msgEl().textContent = `❌ ${data.message}`;
+        rebuildButtons(`<button class="btn secondary" id="_upd_close">Close</button><button class="btn" id="_upd_check">Retry</button>`);
+        break;
+    }
+  });
+
+  document.getElementById('_upd_close').onclick = close;
+  document.getElementById('_upd_check').onclick = doCheck;
+  overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+}
+
 async function screenCeoDashboard() {
   const [unreadCount, pendingLeaveCount, newConcernCount, newComplaintCount] = await Promise.all([
     getUnreadNotificationCount(),
@@ -2048,3 +2165,8 @@ function renderScreen() {
 }
 
 init();
+
+// Wire the OS menu-bar "Help → Check for Updates" click to the in-app modal
+if (window.updater && window.updater.onOpenModal) {
+  window.updater.onOpenModal(() => showUpdateModal());
+}
