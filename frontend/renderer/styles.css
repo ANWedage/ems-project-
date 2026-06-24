@@ -167,6 +167,38 @@ input:focus, select:focus, textarea:focus {
   margin-top: 14px;
 }
 
+.server-status-badge {
+  position: fixed;
+  bottom: 16px;
+  left: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(24, 27, 38, 0.88);
+  border: 1px solid rgba(255,255,255,0.08);
+  backdrop-filter: blur(6px);
+  padding: 6px 12px 6px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #f0a500;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.35);
+  transition: color 0.4s, border-color 0.4s, opacity 0.4s;
+  z-index: 9999;
+  pointer-events: none;
+  user-select: none;
+}
+.server-status-badge::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+  box-shadow: 0 0 6px currentColor;
+}
+
 .success-msg {
   background: #e9f9ef;
   color: var(--success);

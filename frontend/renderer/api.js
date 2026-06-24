@@ -9,6 +9,20 @@ function setAuthToken(token) {
   authToken = token;
 }
 
+// Pre-warm the Render backend so it is awake before the first real request.
+// Uses a lightweight GET; ignores errors (server may still be starting up).
+async function pingServer() {
+  try {
+    await fetch(`${API_BASE_URL}/auth/company-exists?companyName=_ping_`, {
+      method: 'GET',
+      signal: AbortSignal.timeout(30000),
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function apiRequest(path, { method = 'GET', body, auth = false } = {}) {
   const headers = { 'Content-Type': 'application/json' };
   if (auth && authToken) headers['Authorization'] = `Bearer ${authToken}`;

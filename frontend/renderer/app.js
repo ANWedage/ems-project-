@@ -10,7 +10,32 @@ function render(html) {
   app.innerHTML = html;
 }
 
+// Warm-up promise resolved once the server responds (or times out)
+let serverReady = false;
+let serverReadyResolvers = [];
+const serverReadyPromise = new Promise((resolve) => serverReadyResolvers.push(resolve));
+
+async function warmUpBackend() {
+  const ok = await pingServer();
+  serverReady = ok;
+  serverReadyResolvers.forEach((r) => r(ok));
+  // Notify login screen if it is currently visible
+  const badge = document.getElementById('server-status-badge');
+  if (badge) updateServerBadge(badge, ok);
+}
+
+function updateServerBadge(badge, ready) {
+  if (ready) {
+    badge.textContent = 'Server ready';
+    badge.style.color = '#4caf82';
+  } else {
+    badge.textContent = 'Server unreachable';
+    badge.style.color = '#f06060';
+  }
+}
+
 async function init() {
+  warmUpBackend(); // fire-and-forget — starts warming immediately
   const session = await window.localState.get('session');
   if (session && session.token) {
     state.session = session;
@@ -249,6 +274,7 @@ function screenLogin() {
         <label>Password</label>
         <input type="password" id="password" placeholder="Your password" />
         <div id="error-area"></div>
+        <div id="server-status-badge" class="server-status-badge">Connecting to server…</div>
         <div class="btn-row">
           <button class="btn secondary" id="back-btn">Back</button>
           <button class="btn" id="login-btn">Login</button>
@@ -260,6 +286,17 @@ function screenLogin() {
       </div>
     </div>
   `);
+
+  // Update badge immediately if server already responded
+  const badge = document.getElementById('server-status-badge');
+  if (serverReady) {
+    updateServerBadge(badge, true);
+  } else {
+    serverReadyPromise.then((ok) => {
+      const b = document.getElementById('server-status-badge');
+      if (b) updateServerBadge(b, ok);
+    });
+  }
 
   document.getElementById('back-btn').addEventListener('click', () => goTo('role-choice'));
   document.getElementById('concern-link').addEventListener('click', (e) => { e.preventDefault(); goTo('submit-concern'); });
