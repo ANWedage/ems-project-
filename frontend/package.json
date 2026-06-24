@@ -1,6 +1,6 @@
 {
   "name": "ems-desktop",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "EMS Desktop Application (Electron client)",
   "author": "ANWedage",
   "main": "main.js",
@@ -47,7 +47,7 @@
       "releaseType": "release"
     },
     "releaseInfo": {
-      "releaseNotes": "- Update License And Agreement"
+      "releaseNotes": "- Add Logout Confirmation Alert\n- Add Logout Note"
     }
   }
 }
