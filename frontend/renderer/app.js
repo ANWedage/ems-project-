@@ -29,6 +29,8 @@ function dashboardScreenForRole(role) {
 }
 
 async function logout() {
+  const confirmed = confirm('Are you sure you want to logout?');
+  if (!confirmed) return;
   await window.localState.delete('session');
   state.session = null;
   setAuthToken(null);
@@ -57,7 +59,7 @@ function screenAgreement() {
           and unaffiliated third parties cannot access another company's data. You are responsible
           for safeguarding the login credentials you create. Continued use of this application
           constitutes acceptance of these terms.<br><br>
-          <b>Developed by : Adeepa Neth Wedage</b>
+          <b>Developed by : <i>Adeepa Neth Wedage</i></b>
         </div>
         <label style="display:flex;align-items:center;gap:8px;margin-top:16px;font-weight:400;">
           <input type="checkbox" id="agree-checkbox" style="width:auto;" />
@@ -374,6 +376,7 @@ function dashboardShell(activeKey, navItems, contentHtml, subtitle = '') {
         </div>
         <nav>${navHtml}</nav>
         <div class="logout-block">
+          <div class="logout-note">⚠ Please logout when leaving. This system does not implement auto logout.</div>
           <div class="logout" id="logout-btn" title="Log out of ${state.session.username}">
             <span class="logout-icon">⏻</span>
             <span>Logout (${state.session.username})</span>
