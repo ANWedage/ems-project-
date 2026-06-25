@@ -37,6 +37,19 @@ body {
   justify-content: center;
   padding: 40px;
   overflow-y: auto;
+  position: relative;
+}
+
+.dev-credit {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 15px;
+  color: var(--muted);
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
 }
 
 .card {
