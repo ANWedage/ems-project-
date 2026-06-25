@@ -94,6 +94,7 @@ function screenAgreement() {
           <button class="btn" id="next-btn">Next</button>
         </div>
       </div>
+      <div class="dev-credit">Developed by Adeepa Wedage</div>
     </div>
   `);
 
@@ -129,6 +130,7 @@ function screenRoleChoice() {
           <button class="btn secondary" id="back-btn">Back</button>
         </div>
       </div>
+      <div class="dev-credit">Developed by Adeepa Wedage</div>
     </div>
   `);
 
@@ -284,6 +286,7 @@ function screenLogin() {
           <a id="concern-link" href="#" style="font-size:13px;margin-left:6px;color:var(--primary);text-decoration:underline;cursor:pointer;">Submit a Concern</a>
         </div>
       </div>
+      <div class="dev-credit">Developed by Adeepa Wedage</div>
     </div>
   `);
 

@@ -1,14 +1,14 @@
 {
   "name": "ems-desktop",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "EMS Desktop Application (Electron client)",
   "author": "ANWedage",
   "main": "main.js",
   "scripts": {
-    "start": "electron .",
-    "build:win": "electron-builder --win",
-    "build:mac": "electron-builder --mac",
-    "build:linux": "electron-builder --linux",
+    "start": "node init && electron .",
+    "build:win": "node init && electron-builder --win",
+    "build:mac": "node init && electron-builder --mac",
+    "build:linux": "node init && electron-builder --linux",
     "release": "electron-builder --win --publish always"
   },
   "dependencies": {
@@ -47,7 +47,7 @@
       "releaseType": "release"
     },
     "releaseInfo": {
-      "releaseNotes": "- Add Server indicator to view connection status\n- Fix minor bugs and improve performance"
+      "releaseNotes": "- fix few bugs"
     }
   }
 }
