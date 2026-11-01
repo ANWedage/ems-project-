@@ -4,8 +4,8 @@
   "description": "Multi-tenant Employee Management System backend",
   "main": "src/server.js",
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "nodemon src/server.js"
+    "start": "node init && node src/server.js",
+    "dev": "node init && nodemon src/server.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
