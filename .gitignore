@@ -2,7 +2,16 @@
 node_modules/
 
 # Environment variables
-.env.*.local
+.env
+.env.*
+!.env.example
+
+# Secrets and private keys
+.secrets/
+*.pem
+*.key
+*.p12
+*.pfx
 
 # Logs
 *.log
@@ -18,6 +27,9 @@ out/
 Thumbs.db
 
 # Editor
+.vscode/*
+!.vscode/settings.json
+.idea/
 *.suo
 *.ntvs*
 *.njsproj
